@@ -6,6 +6,8 @@
 #include "../Utils.h" // Utility functions
 #include "../TreeVisualization.h"
 #include "../OBST.h" // OBST class
+#include <iomanip>
+#include <algorithm>
 
 void CLI::displayTree() const
 {

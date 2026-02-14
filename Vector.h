@@ -25,7 +25,7 @@ public:
    * @param initial_size The initial size of the vector (default is 0).
    */
   Vector(size_t initial_size = 0)
-      : cap(initial_size), len(initial_size), data(initial_size ? new T[initial_size] : nullptr) {}
+      : data(initial_size ? new T[initial_size] : nullptr), cap(initial_size), len(initial_size) {}
 
   /**
    * @brief Constructor to initialize a vector with a list of values.
@@ -35,7 +35,7 @@ public:
    * @param list An initializer list of elements.
    */
   Vector(std::initializer_list<T> list)
-      : cap(list.size()), len(list.size()), data(new T[list.size()])
+      : data(new T[list.size()]), cap(list.size()), len(list.size())
   {
     size_t i = 0;
     for (const T &elem : list)
@@ -51,11 +51,94 @@ public:
    */
   ~Vector()
   {
-    if (len)
+    delete[] data;
+  }
+
+  /**
+   * @brief Copy constructor.
+   *
+   * Creates a deep copy of another vector.
+   *
+   * @param other The vector to copy from.
+   */
+  Vector(const Vector &other)
+      : data(other.len ? new T[other.len] : nullptr), cap(other.cap), len(other.len)
+  {
+    for (size_t i = 0; i < len; ++i)
     {
-      len = 0;
-      delete[] data;
+      data[i] = other.data[i];
     }
+  }
+
+  /**
+   * @brief Copy assignment operator.
+   *
+   * Assigns a deep copy of another vector to this vector.
+   *
+   * @param other The vector to copy from.
+   * @return A reference to this vector.
+   */
+  Vector &operator=(const Vector &other)
+  {
+    if (this != &other)
+    {
+      // Clean up existing data
+      delete[] data;
+
+      // Copy new data
+      cap = other.cap;
+      len = other.len;
+      data = other.len ? new T[other.len] : nullptr;
+
+      for (size_t i = 0; i < len; ++i)
+      {
+        data[i] = other.data[i];
+      }
+    }
+    return *this;
+  }
+
+  /**
+   * @brief Move constructor.
+   *
+   * Transfers ownership of resources from another vector.
+   *
+   * @param other The vector to move from.
+   */
+  Vector(Vector &&other) noexcept
+      : data(other.data), cap(other.cap), len(other.len)
+  {
+    other.data = nullptr;
+    other.cap = 0;
+    other.len = 0;
+  }
+
+  /**
+   * @brief Move assignment operator.
+   *
+   * Transfers ownership of resources from another vector.
+   *
+   * @param other The vector to move from.
+   * @return A reference to this vector.
+   */
+  Vector &operator=(Vector &&other) noexcept
+  {
+    if (this != &other)
+    {
+      // Clean up existing data
+      delete[] data;
+
+      // Transfer ownership
+      data = other.data;
+      cap = other.cap;
+      len = other.len;
+
+      // Reset other
+      other.data = nullptr;
+      other.cap = 0;
+      other.len = 0;
+    }
+    return *this;
   }
 
   /**
@@ -89,22 +172,26 @@ public:
   {
     if (new_size > cap)
     {
-      // If the new size exceeds the current capacity, allocate new memory
-      T *new_data = new T[new_size];
+      // Allocate new memory with some growth factor
+      size_t new_cap = (new_size > cap * 2) ? new_size : cap * 2;
+      if (new_cap == 0)
+        new_cap = 1;
+
+      T *new_data = new T[new_cap];
       for (size_t i = 0; i < len; ++i)
       {
-        new_data[i] = data[i]; // Copy existing elements to the new array
+        new_data[i] = data[i]; // Copy existing elements
       }
-      delete[] data;   // Free the old array
-      data = new_data; // Point to the new array
-      cap = new_size;  // Update the capacity
+      delete[] data;
+      data = new_data;
+      cap = new_cap;
     }
     // Default-initialize new elements if resizing to a larger size
     for (size_t i = len; i < new_size; ++i)
     {
       data[i] = T();
     }
-    len = new_size; // Update the current size
+    len = new_size;
   }
 
   /**
@@ -124,19 +211,22 @@ public:
    *
    * This function prints all the elements of the vector to the console.
    */
-  void display(bool printFirstElement = true, std::string sep = " ")
+  void display(bool printFirstElement = true, std::string sep = " ") const
   {
-    if (printFirstElement)
+    if (len == 0)
     {
-      std::cout << data[0];
-      std::cout << sep;
+      std::cout << std::endl;
+      return;
     }
 
-    for (int i = 1; i < len - 1; ++i)
-      std::cout << data[i] << sep;
-
-    if (len > 0)
-      std::cout << data[len - 1];
+    size_t start = printFirstElement ? 0 : 1;
+    
+    if (start < len)
+    {
+      std::cout << data[start];
+      for (size_t i = start + 1; i < len; ++i)
+        std::cout << sep << data[i];
+    }
 
     std::cout << std::endl;
   }
@@ -150,16 +240,34 @@ public:
    */
   void push_back(const T &value)
   {
-    resize(len + 1);
+    if (len >= cap)
+    {
+      // Need to grow capacity
+      size_t new_cap = (cap == 0) ? 1 : cap * 2;
+      T *new_data = new T[new_cap];
+      for (size_t i = 0; i < len; ++i)
+      {
+        new_data[i] = data[i];
+      }
+      delete[] data;
+      data = new_data;
+      cap = new_cap;
+    }
     data[len++] = value;
   }
 
+  /**
+   * @brief Find the first occurrence of a value.
+   *
+   * @param key The value to search for.
+   * @return The index of the first occurrence, or -1 if not found.
+   */
   int findOne(const T &key) const
   {
-    for (int i = 0; i < len; ++i)
+    for (size_t i = 0; i < len; ++i)
     {
       if (data[i] == key)
-        return i;
+        return static_cast<int>(i);
     }
     return -1;
   }
@@ -173,14 +281,14 @@ public:
    * @param index The index of the element to remove.
    * @throws std::out_of_range If the index is out of bounds.
    */
-  void removeByIndex(int index)
+  void removeByIndex(size_t index)
   {
     if (index >= len)
     {
       throw std::out_of_range("Index out of bounds in Vector::removeByIndex");
     }
 
-    for (int i = index; i < len - 1; ++i)
+    for (size_t i = index; i < len - 1; ++i)
     {
       data[i] = data[i + 1];
     }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <limits>
 #include "Vector.h"
 
 namespace Utils

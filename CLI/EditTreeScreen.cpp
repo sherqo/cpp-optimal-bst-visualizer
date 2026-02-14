@@ -5,6 +5,8 @@
 
 #include "../OBST.h"  // OBST class
 #include "../Utils.h" // Utility functions
+#include <iomanip>
+#include <algorithm>
 
 void CLI::editTree()
 {
