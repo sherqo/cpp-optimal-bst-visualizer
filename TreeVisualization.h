@@ -105,7 +105,14 @@ private:
   void static openFileWithSystem(const std::string &filename)
   {
     // Construct the command to open the file with the default application
-    std::string command = "open " + filename;
+    std::string command;
+#ifdef _WIN32
+    command = "start " + filename;
+#elif __APPLE__
+    command = "open " + filename;
+#else
+    command = "xdg-open " + filename;
+#endif
 
     // Execute the command
     int result = system(command.c_str());
