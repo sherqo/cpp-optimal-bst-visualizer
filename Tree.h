@@ -90,6 +90,38 @@ public:
     deleteTree(root);
   }
 
+  // Copy constructor
+  Tree(const Tree &other) : root(copySubtree(other.root)) {}
+
+  // Copy assignment operator
+  Tree &operator=(const Tree &other)
+  {
+    if (this != &other)
+    {
+      deleteTree(root);
+      root = copySubtree(other.root);
+    }
+    return *this;
+  }
+
+  // Move constructor
+  Tree(Tree &&other) noexcept : root(other.root)
+  {
+    other.root = nullptr;
+  }
+
+  // Move assignment operator
+  Tree &operator=(Tree &&other) noexcept
+  {
+    if (this != &other)
+    {
+      deleteTree(root);
+      root = other.root;
+      other.root = nullptr;
+    }
+    return *this;
+  }
+
   void setRoot(TreeNode *node)
   {
     root = node;
@@ -107,8 +139,7 @@ public:
 
   void assign(const Tree &otherTree)
   {
-    deleteTree(root);
-    root = copySubtree(otherTree.root);
+    *this = otherTree; // Use copy assignment operator
   }
 
   // === New Analysis Methods ===
